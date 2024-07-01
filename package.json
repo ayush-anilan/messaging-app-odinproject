@@ -1,0 +1,23 @@
+{
+  "name": "messaging-web-app-odin",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "install-server": "cd server && npm install",
+    "start-server": "cd server && node app.js",
+    "install-client": "cd client && npm install",
+    "build-client": "cd client && npm run build",
+    "start-client": "cd client && npm run dev"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "mongoose": "^8.4.4",
+    "nodemon": "^3.1.4"
+  }
+}
