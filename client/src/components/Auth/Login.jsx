@@ -1,9 +1,30 @@
-import React from 'react'
+import React, { useState } from 'react'
 import Logo from '../../assets/logo.png'
 import SideImage from '../../assets/sideimage.png'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import api from '../../services/api'
 
 const Login = () => {
+    const [username, setUsername] = useState('')
+    const [password, setPassword] = useState('')
+    const [error, setError] = useState(null)
+    const navigate = useNavigate()
+
+    const handleSubmit = async (e) => {
+        e.preventDefault()
+        try {
+            const response = await api.post('/login', { username, password })
+            alert("User logged in successfully")
+            console.log(response);
+            localStorage.setItem('token', response.data.token)
+            localStorage.setItem('username', response.data.username)
+            navigate("/homepage")
+        } catch (error) {
+            console.log(error);
+            alert(error)
+        }
+    }
+
     return (
         <div className='flex h-screen'>
             <div className='left-side  bg-[#8722be] w-2/5 flex flex-col justify-center items-center min-h-screen max-lg:w-full max-xl:w-1/2'>
@@ -20,15 +41,16 @@ const Login = () => {
                         </Link>
                     </div>
                 </div>
-                <form action="" className=' w-2/3 max-lg:w-full max-lg:px-8 flex flex-col gap-5 mt-5'>
+                <form onSubmit={handleSubmit} className=' w-2/3 max-lg:w-full max-lg:px-8 flex flex-col gap-5 mt-5'>
                     <div className='flex flex-col'>
                         <label htmlFor="username" className='font-semibold text-lg text-white'>Username</label>
-                        <input type="text" name="username" id="" className='h-10 border rounded-md focus:outline-[#8722be] pl-2 text-base' />
+                        <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} name="username" id="username" className='h-10 border rounded-md focus:outline-[#8722be] pl-2 text-base' />
                     </div>
                     <div className='flex flex-col'>
                         <label htmlFor="password" className='font-semibold text-lg text-white'>Password</label>
-                        <input type="password" name="password" id="" className='h-10 rounded-md focus:outline-[#8722be] pl-2 text-base' />
+                        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} name="password" id="password" className='h-10 rounded-md focus:outline-[#8722be] pl-2 text-base' />
                     </div>
+                    {error && <div className='text-red-500'>{error}</div>}
                     <div className='bg-[#fdd631] text-center rounded-md'>
                         <button className='bg-[#fdd631] h-10 rounded-md text-lg font-semibold'>Sign in</button>
                     </div>
