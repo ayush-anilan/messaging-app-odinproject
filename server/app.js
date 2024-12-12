@@ -6,7 +6,8 @@ const connectDB = require("./config/db");
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/users");
 const auth = require("./middleware/auth");
-const http = require("http").Server(app);
+const http = require("http").Server(app); // Use the HTTP server instance
+const socketIo = require("socket.io"); // Import socket.io
 require("dotenv").config();
 
 const corsOptions = {

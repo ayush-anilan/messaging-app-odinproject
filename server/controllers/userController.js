@@ -21,7 +21,9 @@ exports.getUsers = async (req, res) => {
     const userProfiles = users.map((user) => ({
       _id: user._id,
       username: user.username,
-      profilePicture: user.profilePicture,
+      profilePicture: user.profilePicture
+        ? `/api/profile-picture/${user._id}`
+        : null,
     }));
     res.json(userProfiles);
   } catch (error) {
