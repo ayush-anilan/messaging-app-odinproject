@@ -19,16 +19,19 @@ const Login = () => {
             localStorage.setItem('userid', response.data.id);
             localStorage.setItem('token', response.data.token);
             localStorage.setItem('username', response.data.username);
+            localStorage.setItem("profilePicture", response.data.profilePicture)
             navigate("/homepage");
         } catch (error) {
             console.error(error);
+            console.log(error);
+
             setError(error.response?.data?.message || 'An error occurred. Please try again.');
         }
     };
 
     return (
         <div className='flex h-screen'>
-            <div className='left-side bg-[#8722be] w-2/5 flex flex-col justify-center items-center min-h-screen max-lg:w-full max-xl:w-1/2'>
+            <div className='left-side bg-gray-800 w-2/5 flex flex-col justify-center items-center min-h-screen max-lg:w-full max-xl:w-1/2'>
                 <div className='logo flex justify-start items-center w-2/3 -ml-8 max-lg:w-full max-lg:flex max-lg:justify-center'>
                     <img src={Logo} alt="" className='h-28 max-lg:h-32' />
                     <p className='font-semibold text-6xl max-lg:text-8xl mt-2 -ml-3 text-white font-teko'>ChatWave</p>

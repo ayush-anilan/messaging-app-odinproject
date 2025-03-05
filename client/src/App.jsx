@@ -8,7 +8,6 @@ import RequireAuth from './components/RequireAuth'
 
 function App() {
 
-
   return (
     <>
       <Router>

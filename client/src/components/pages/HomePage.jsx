@@ -1,131 +1,164 @@
-import React, { useEffect, useState } from 'react';
-import Logo from '../../assets/logo.png';
-import api from '../../services/api';
-import { ChevronDown, Send, Users, Globe } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { FaComments, FaSearch, FaPaperPlane, FaChevronDown, FaChevronUp, FaPaperclip } from "react-icons/fa";
+import ChatSideBar from '../ChatSideBar';
 
 const HomePage = () => {
-    const userName = localStorage.getItem('username');
-    const userId = localStorage.getItem('userid');
-    const navigate = useNavigate();
-    const [profilePicture, setProfilePicture] = useState("");
-    const [dropdownOpen, setDropdownOpen] = useState(false);
-    const [friends, setFriends] = useState([]);
-    const [activeChat, setActiveChat] = useState("Chat");
-    const [selectedFriend, setSelectedFriend] = useState(null);
+    const userName = localStorage.getItem("username");
+    const profilePicture = localStorage.getItem("profilePicture");
 
-    useEffect(() => {
-        const fetchProfilePic = async () => {
-            try {
-                const response = await api.get(`/users/profile-picture/${userId}`, {
-                    responseType: 'arraybuffer'
-                });
-                const base64String = btoa(
-                    new Uint8Array(response.data).reduce((data, byte) => data + String.fromCharCode(byte), '')
-                );
-                setProfilePicture(`data:image/png;base64,${base64String}`);
-            } catch (error) {
-                console.error("Error fetching profile picture:", error);
-            }
-        };
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [selectedUser, setSelectedUser] = useState(null); // Store the selected user
+    const [message, setMessage] = useState("");
+    const [file, setFile] = useState(null);
 
-        const fetchFriends = async () => {
-            try {
-                const response = await api.get('/users');
-                const filteredFriends = response.data.filter(friend => friend.username !== userName);
-                setFriends(filteredFriends);
-            } catch (error) {
-                console.error("Error fetching friends list:", error);
-            }
-        };
-
-        if (userName) {
-            fetchProfilePic();
-            fetchFriends();
-        }
-    }, [userName, userId]);
+    const toggleDropdown = () => {
+        setIsDropdownOpen(!isDropdownOpen);
+    };
 
     const handleLogout = () => {
         localStorage.clear();
-        navigate('/login');
+        window.location.href = "/login"; // Redirect to login page
     };
 
-    const handleChatSelection = (name) => {
-        setActiveChat(name);
-        setSelectedFriend(name);
+    const handleSelectUser = (user) => {
+        setSelectedUser(user); // Update the chat header with the clicked user
+    };
+
+    const handleSendMessage = () => {
+        if (message.trim() || file) {
+            console.log("Sending message:", message);
+            console.log("Sending file:", file);
+            setMessage("");
+            setFile(null); // Clear file after sending
+        }
+    };
+
+    const handleFileChange = (e) => {
+        const selectedFile = e.target.files[0];
+        if (selectedFile) {
+            setFile(selectedFile);
+        }
     };
 
     return (
         <div className="flex h-screen">
             {/* Sidebar */}
-            <div className="w-1/4 bg-gray-800 text-white flex flex-col">
-                <div className="p-4 flex items-center gap-2 border-b border-gray-700">
-                    <img src={Logo} alt="Logo" className="h-12" />
-                    <h1 className="text-2xl font-bold">ChatWave</h1>
-                </div>
-
-                <div className="flex-grow overflow-y-auto">
-                    <h2 className="text-lg font-semibold p-4">Friends</h2>
-                    <ul className="space-y-2 px-4">
-                        {friends.map((friend) => (
-                            <li
-                                key={friend.id}
-                                className={`flex items-center gap-2 p-2 rounded cursor-pointer ${selectedFriend === friend.username ? 'bg-gray-600' : 'bg-gray-700 hover:bg-gray-600'}`}
-                                onClick={() => handleChatSelection(friend.username)}
-                            >
-                                <img src={friend.profilePicture} alt={friend.username} className="w-8 h-8 rounded-full" />
-                                <span>{friend.username}</span>
-                            </li>
-                        ))}
-                    </ul>
-
-                    <h2 className="text-lg font-semibold p-4 mt-6">Global Chat</h2>
-                    <div className="px-4">
+            <div className="w-1/4 bg-white border-r relative">
+                <div className="flex items-center justify-between p-4 border-b">
+                    <div className="flex items-center">
+                        <FaComments className='text-orange-500 text-2xl' />
+                        <span className="ml-2 text-xl font-bold text-orange-500">Chat Wave</span>
+                    </div>
+                    <div className="relative">
                         <div
-                            className={`flex items-center gap-2 p-2 rounded cursor-pointer ${selectedFriend === "Global Chat Room" ? 'bg-gray-600' : 'bg-gray-700 hover:bg-gray-600'}`}
-                            onClick={() => handleChatSelection("Global Chat Room")}
+                            className="flex items-center gap-2 cursor-pointer"
+                            onClick={toggleDropdown}
                         >
-                            <Globe />
-                            <span>Global Chat Room</span>
+                            <img
+                                src={profilePicture || "https://placehold.co/40x40"}
+                                alt="User avatar"
+                                className="w-10 h-10 rounded-full"
+                            />
+                            <p>{userName}</p>
+                            {isDropdownOpen ? (
+                                <FaChevronUp className="text-gray-500" />
+                            ) : (
+                                <FaChevronDown className="text-gray-500" />
+                            )}
                         </div>
+
+                        {isDropdownOpen && (
+                            <div className="absolute right-0 mt-2 w-32 bg-white border rounded-lg shadow-lg z-50">
+                                <button
+                                    onClick={handleLogout}
+                                    className="block w-full px-4 py-2 text-left hover:bg-gray-100"
+                                >
+                                    Logout
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
 
-                <div className="p-4 border-t border-gray-700">
-                    <div className="flex items-center gap-2 cursor-pointer" onClick={() => setDropdownOpen(!dropdownOpen)}>
-                        <img src={profilePicture} alt="Profile" className="w-10 h-10 rounded-full" />
-                        <span>{userName}</span>
-                        <ChevronDown />
+                <div className="p-4">
+                    <div className="relative mb-4">
+                        <input
+                            type="text"
+                            placeholder="Search"
+                            className="w-full p-2 pl-10 border rounded-full focus:outline-none"
+                        />
+                        <FaSearch className='absolute left-3 top-3 text-gray-400' />
                     </div>
-                    {dropdownOpen && (
-                        <div className="bg-gray-700 rounded mt-2 p-2">
-                            <div className="p-2 cursor-pointer hover:bg-gray-600" onClick={handleLogout}>
-                                Logout
-                            </div>
-                        </div>
-                    )}
+                    <div className="flex justify-between mb-4">
+                        <button className="px-4 py-2 text-sm font-bold text-gray-600 border rounded-full">EMAIL</button>
+                        <button className="px-4 py-2 text-sm font-bold text-white bg-orange-500 rounded-full">CHAT</button>
+                    </div>
+                </div>
+                <div className='p-4'>
+                    <ChatSideBar onSelectUser={handleSelectUser} />
                 </div>
             </div>
 
-            {/* Chat Screen */}
-            <div className="w-3/4 bg-gray-100 flex flex-col">
-                <div className="p-4 bg-white shadow flex items-center justify-between">
-                    <h2 className="text-2xl font-bold">{activeChat}</h2>
-                    <button className="bg-blue-500 text-white px-4 py-2 rounded">Start New Chat</button>
+            {/* Chat Section */}
+            <div className="flex-1 flex flex-col">
+                {/* Chat Header */}
+                <div className="flex items-center justify-between p-4 border-b bg-white">
+                    {selectedUser ? (
+                        <div className="flex items-center">
+                            <img src={selectedUser.profilePicture || "https://placehold.co/40x40"}
+                                alt="User avatar"
+                                className="w-10 h-10 rounded-full" />
+                            <div className="ml-4">
+                                <div className="font-bold">{selectedUser.username}</div>
+                                <div className="text-gray-500">Active Now</div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="font-bold text-gray-500">Select a friend to chat</div>
+                    )}
                 </div>
 
-                <div className="flex-grow overflow-y-auto p-4">
-                    {/* Chat messages will be rendered here */}
+                {/* Messages */}
+                <div className="flex-1 p-4 overflow-y-auto">
+                    {file && (
+                        <div className="mb-2 p-2 border rounded-lg bg-gray-100 flex items-center">
+                            {file.type.startsWith("image/") ? (
+                                <img src={URL.createObjectURL(file)} alt="Preview" className="w-20 h-20 rounded-lg mr-2" />
+                            ) : (
+                                <span className="text-sm">{file.name}</span>
+                            )}
+                            <button
+                                onClick={() => setFile(null)}
+                                className="ml-2 text-red-500 text-sm"
+                            >
+                                Remove
+                            </button>
+                        </div>
+                    )}
                 </div>
 
-                <div className="p-4 bg-white shadow flex items-center">
+                {/* Message Input */}
+                <div className="p-4 border-t flex items-center bg-white">
                     <input
                         type="text"
-                        className="flex-grow border border-gray-300 rounded p-2 mr-2"
-                        placeholder="Type a message..."
+                        placeholder="Type here..."
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                        className="flex-1 p-2 border rounded-full focus:outline-none"
                     />
-                    <button className="bg-blue-500 text-white px-4 py-2 rounded">
-                        <Send />
+
+                    <label htmlFor="fileUpload" className="ml-4 p-2 cursor-pointer text-gray-500">
+                        <FaPaperclip />
+                    </label>
+                    <input
+                        type="file"
+                        id="fileUpload"
+                        onChange={handleFileChange}
+                        className="hidden"
+                    />
+
+                    <button onClick={handleSendMessage} className="ml-4 p-2 bg-orange-500 text-white rounded-full">
+                        <FaPaperPlane />
                     </button>
                 </div>
             </div>

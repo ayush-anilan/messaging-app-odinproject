@@ -5,18 +5,22 @@ const cors = require("cors");
 const connectDB = require("./config/db");
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/users");
+const Message = require("./models/Message");
 const auth = require("./middleware/auth");
-const http = require("http").Server(app); // Use the HTTP server instance
-const socketIo = require("socket.io"); // Import socket.io
+const http = require("http");
+const { Server } = require("socket.io"); // Import socket.io
 require("dotenv").config();
 
 const corsOptions = {
   origin: "http://localhost:5173", // frontend URI
   credentials: true,
+  methods: ["GET", "POST"],
 };
 
 app.use(express.json());
 app.use(cors(corsOptions));
+
+const server = http.createServer(app);
 
 // Connect to MongoDb
 connectDB();
@@ -36,6 +40,6 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 8000;
 
-http.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server listening on ${PORT}`);
 });

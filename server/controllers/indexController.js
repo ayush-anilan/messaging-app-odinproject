@@ -2,22 +2,30 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const multer = require("multer");
-const path = require("path");
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const cloudinary = require("cloudinary").v2;
 require("dotenv").config();
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/");
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+// Configure multer to use Cloudinary storage
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "profile_pictures",
+    allowed_formats: ["jpg", "jpeg", "png"],
+    transformation: [{ width: 300, height: 300, crop: "limit" }],
   },
 });
 
 const upload = multer({ storage });
 
-// login controller
+// Login Controller
 exports.login = async (req, res) => {
   const { username, password } = req.body;
 
@@ -31,46 +39,55 @@ exports.login = async (req, res) => {
     return res.status(400).json({ message: "Invalid credentials" });
   }
 
-  const profilePicturePath = user.profilePicture
-    ? user.profilePicture.replace(/\\/g, "/")
-    : null;
-
   const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
     expiresIn: "1h",
   });
+
   res.json({
     id: user._id,
     username,
     token,
-    profilePicture: profilePicturePath,
+    profilePicture: user.profilePicture,
   });
 };
 
-// register controller
+// Register Controller
 exports.register = [
   upload.single("profilePicture"),
   async (req, res) => {
-    const { username, password } = req.body;
+    try {
+      const { username, password } = req.body;
 
-    if (!username || !password) {
-      return res
-        .status(400)
-        .json({ message: "Username and password are required" });
+      if (!username || !password) {
+        return res
+          .status(400)
+          .json({ message: "Username and password are required" });
+      }
+
+      const existingUser = await User.findOne({ username });
+      if (existingUser) {
+        return res.status(400).json({ message: "User already exists" });
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const newUser = new User({
+        username,
+        password: hashedPassword,
+        profilePicture: req.file ? req.file.path : null, // Cloudinary URL
+      });
+
+      await newUser.save();
+      res.status(201).json({
+        message: "User registered successfully",
+        user: {
+          id: newUser._id,
+          username: newUser.username,
+          profilePicture: newUser.profilePicture,
+        },
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Server error" });
     }
-
-    const existingUser = await User.findOne({ username });
-    if (existingUser) {
-      return res.status(400).json({ message: "User already exists" });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = new User({
-      username,
-      password: hashedPassword,
-      profilePicture: req.file ? req.file.path : null,
-    });
-
-    await newUser.save();
-    res.status(201).json({ message: "User registered successfully" });
   },
 ];

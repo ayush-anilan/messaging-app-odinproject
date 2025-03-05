@@ -16,13 +16,13 @@ const Register = () => {
     }
 
     const handleSubmit = async (e) => {
-        e.preventDefault()
+        e.preventDefault();
 
-        const formData = new FormData()
-        formData.append('username', username)
-        formData.append('password', password)
+        const formData = new FormData();
+        formData.append('username', username);
+        formData.append('password', password);
         if (profilePic) {
-            formData.append('profilePicture', profilePic)
+            formData.append('profilePicture', profilePic);
         }
 
         try {
@@ -30,15 +30,22 @@ const Register = () => {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }
-            })
-            console.log(response)
-            alert("User registered successfully")
-            navigate("/login")
+            });
+
+            console.log(response.data);
+            alert("User registered successfully");
+
+            // Optional: Store profile picture URL
+            if (response.data.profilePicture) {
+                console.log("Profile Picture URL:", response.data.profilePicture);
+            }
+
+            navigate("/login");
         } catch (error) {
-            console.log(error)
-            setError('Registration failed. Please try again.')
+            console.log(error);
+            setError('Registration failed. Please try again.');
         }
-    }
+    };
 
     return (
         <div className='flex h-screen'>

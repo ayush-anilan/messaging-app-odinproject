@@ -17,14 +17,15 @@ const upload = multer({ storage });
 // get users
 exports.getUsers = async (req, res) => {
   try {
-    const users = await User.find();
+    const loggedInUserId = req.params.id; // Assuming req.user contains authenticated user info
+    const users = await User.find({ _id: { $ne: loggedInUserId } }); // Exclude logged-in user
+
     const userProfiles = users.map((user) => ({
       _id: user._id,
       username: user.username,
-      profilePicture: user.profilePicture
-        ? `/api/profile-picture/${user._id}`
-        : null,
+      profilePicture: user.profilePicture,
     }));
+
     res.json(userProfiles);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -43,7 +44,7 @@ exports.getUserById = async (req, res) => {
       _id: user._id,
       username: user.username,
       profilePicture: user.profilePicture
-        ? `/api/profile-picture/${user._id}`
+        ? `/api/users/profile-picture/${user._id}`
         : null,
     };
     res.json(userProfile);
