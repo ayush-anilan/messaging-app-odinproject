@@ -23,7 +23,6 @@ const Login = () => {
             navigate("/homepage");
         } catch (error) {
             console.error(error);
-            console.log(error);
 
             setError(error.response?.data?.message || 'An error occurred. Please try again.');
         }

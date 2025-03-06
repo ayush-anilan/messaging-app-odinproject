@@ -1,45 +1,78 @@
 const express = require("express");
 const mongoose = require("mongoose");
-const app = express();
+const http = require("http");
+const { Server } = require("socket.io");
 const cors = require("cors");
 const connectDB = require("./config/db");
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/users");
 const Message = require("./models/Message");
-const auth = require("./middleware/auth");
-const http = require("http");
-const { Server } = require("socket.io"); // Import socket.io
 require("dotenv").config();
 
-const corsOptions = {
-  origin: "http://localhost:5173", // frontend URI
-  credentials: true,
-  methods: ["GET", "POST"],
-};
+const app = express();
+const server = http.createServer(app); // Create HTTP server
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:5173",
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE"],
+  },
+});
 
-app.use(express.json());
-app.use(cors(corsOptions));
-
-const server = http.createServer(app);
-
-// Connect to MongoDb
 connectDB();
+app.use(express.json());
+app.use(cors({ origin: "http://localhost:5173", credentials: true }));
 
-// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
-
-// Protected route example
-app.get("/api/protected", auth, (req, res) => {
-  res.json({ message: "This is a protected route", user: req.user });
-});
 
 app.get("/", (req, res) => {
   res.status(201).json({ message: "Connected to Backend!" });
 });
 
-const PORT = process.env.PORT || 8000;
+// Socket.IO connection
+io.on("connection", (socket) => {
+  console.log("A user connected:", socket.id);
 
+  // Listen for incoming messages
+  socket.on("sendMessage", async ({ sender, receiver, message }) => {
+    const newMessage = new Message({ sender, receiver, message });
+    await newMessage.save();
+
+    // Emit the message to the receiver
+    io.emit("receiveMessage", {
+      sender,
+      receiver,
+      message,
+      timestamp: newMessage.timestamp,
+    });
+  });
+
+  socket.on("disconnect", () => {
+    console.log("User disconnected:", socket.id);
+  });
+});
+
+app.get("/api/messages/:senderId/:receiverId", async (req, res) => {
+  try {
+    const { senderId, receiverId } = req.params;
+
+    // Fetch messages where sender & receiver match
+    const messages = await Message.find({
+      $or: [
+        { sender: senderId, receiver: receiverId },
+        { sender: receiverId, receiver: senderId },
+      ],
+    }).sort({ createdAt: 1 }); // Sort by time
+
+    res.json(messages);
+  } catch (error) {
+    console.error("Error fetching messages:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+const PORT = process.env.PORT || 8000;
 server.listen(PORT, () => {
   console.log(`Server listening on ${PORT}`);
 });
