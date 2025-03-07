@@ -76,7 +76,7 @@ const HomePage = () => {
 
     const handleSendMessage = () => {
         if (message.trim() || file) {
-            const newMessage = { sender: userId, receiver: selectedUser._id, message, file };
+            const newMessage = { sender: userId, receiver: selectedUser._id, message, file, timestamp: new Date().toISOString() };
 
             socket.emit("sendMessage", newMessage); // Only send to the server
 
@@ -147,7 +147,6 @@ const HomePage = () => {
                             />
                             <div className="ml-4">
                                 <div className="font-bold">{selectedUser.username}</div>
-                                <div className="text-gray-500">Active Now</div>
                             </div>
                         </div>
                     ) : (
@@ -165,6 +164,10 @@ const HomePage = () => {
 
                             {msg.message && <p>{msg.message}</p>}
                             {msg.file && <img src={msg.file} alt="File" className="w-20 h-20 rounded-lg mt-2" />}
+                            {/* Message Timestamp */}
+                            <span className="text-xs text-gray-300 block mt-1">
+                                {new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                            </span>
                         </div>
                     ))}
                     <div ref={chatEndRef}></div>
